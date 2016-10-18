@@ -26,87 +26,140 @@ class Main extends React.Component {
     this.state ={
       boardData: testData,
       numberRows: numberRows,
-      numberColumns: numberColumns
+      numberColumns: numberColumns,
+      isRunning: true,
+      generation: 0
     };
 
-    setInterval(function() {
+    var getNewCellState = function (boardData, rowNb, colNb) {
       var that = this;
 
-      function getNewCellState(boardData, rowNb, colNb) {
-        function getNbOfAliveAndDeadNeighbours(boardData, rowNb, colNb) {
-          var numberOfAliveNeighbours = 0;
-          for(var i = rowNb - 1; i <= rowNb + 1; i++) {
-            for(var j = colNb - 1; j <= colNb + 1; j++) {
-              var tempRowIndex;
-              var tempColumnIndex;
-              if(i === -1) tempRowIndex = that.state.numberRows-1;
-              else if(i === that.state.numberRows) tempRowIndex = 0;
-              else tempRowIndex = i;
+      function getNbOfAliveAndDeadNeighbours(boardData, rowNb, colNb) {
 
-              if(j === -1) tempColumnIndex = that.state.numberColumns-1;
-              else if(j === that.state.numberColumns) tempColumnIndex = 0;
-              else tempColumnIndex = j;
+        var numberOfAliveNeighbours = 0;
+        for (var i = rowNb - 1; i <= rowNb + 1; i++) {
+          for (var j = colNb - 1; j <= colNb + 1; j++) {
+            var tempRowIndex;
+            var tempColumnIndex;
+            if (i === -1) tempRowIndex = that.state.numberRows - 1;
+            else if (i === that.state.numberRows) tempRowIndex = 0;
+            else tempRowIndex = i;
 
-              if(boardData[tempRowIndex][tempColumnIndex] > that.cellStates.dead && !(colNb === j && rowNb === i)) { numberOfAliveNeighbours++; }
+            if (j === -1) tempColumnIndex = that.state.numberColumns - 1;
+            else if (j === that.state.numberColumns) tempColumnIndex = 0;
+            else tempColumnIndex = j;
+
+            if (boardData[tempRowIndex][tempColumnIndex] > that.cellStates.dead && !(colNb === j && rowNb === i)) {
+              numberOfAliveNeighbours++;
             }
           }
-          return numberOfAliveNeighbours;
         }
+        return numberOfAliveNeighbours;
+      }
 
-        function getStateByNumberOfAliveNeighbours(stateOfCell, numberOfAliveNeighbours) {
-          if(numberOfAliveNeighbours < 2) return that.cellStates.dead;
-          else if(numberOfAliveNeighbours === 2) {
-            if(stateOfCell > that.cellStates.dead) return that.cellStates.old;
-            else return that.cellStates.dead;
-          }
-          else if(numberOfAliveNeighbours === 3) {
-            if(stateOfCell > that.cellStates.dead) return that.cellStates.old;
-            else return that.cellStates.alive;
-          }
+      function getStateByNumberOfAliveNeighbours(stateOfCell, numberOfAliveNeighbours) {
+        if (numberOfAliveNeighbours < 2) return that.cellStates.dead;
+        else if (numberOfAliveNeighbours === 2) {
+          if (stateOfCell > that.cellStates.dead) return that.cellStates.old;
           else return that.cellStates.dead;
         }
-
-        var numberOfAliveNeighbours = getNbOfAliveAndDeadNeighbours(boardData, rowNb, colNb);
-        return getStateByNumberOfAliveNeighbours(boardData[rowNb][colNb], numberOfAliveNeighbours);
-      }
-
-      var newBoardData = [];
-      for(var i = 0; i < that.state.numberRows; i++) {
-        newBoardData[i] = [];
-        for(var j = 0; j < that.state.numberColumns; j++) {
-          newBoardData[i][j] = getNewCellState(that.state.boardData, i, j);
+        else if (numberOfAliveNeighbours === 3) {
+          if (stateOfCell > that.cellStates.dead) return that.cellStates.old;
+          else return that.cellStates.alive;
         }
+        else return that.cellStates.dead;
       }
-      that.setState({boardData: newBoardData});
-    }.bind(this), 100);
 
-  }
-  render() {
-    var getClassNameForCell = function(cell) {
-      if(cell === this.cellStates.dead) return 'dead';
-      else if(cell === this.cellStates.alive) return 'alive';
-      else if(cell === this.cellStates.old) return 'old';
+      var numberOfAliveNeighbours = getNbOfAliveAndDeadNeighbours(boardData, rowNb, colNb);
+      return getStateByNumberOfAliveNeighbours(boardData[rowNb][colNb], numberOfAliveNeighbours);
     }.bind(this);
 
-    function mapRowDataToRow(row) {
-      return row.map(function(cell, i) {
-        return <td className={getClassNameForCell(cell)} key={i} />
-      })
+    this.interval = function() {
+
+      var newBoardData = [];
+      for(var i = 0; i < this.state.numberRows; i++) {
+        newBoardData[i] = [];
+        for(var j = 0; j < this.state.numberColumns; j++) {
+          newBoardData[i][j] = getNewCellState(this.state.boardData, i, j);
+        }
+      }
+      this.setState({ boardData: newBoardData, generation: this.state.generation+1 });
+    }.bind(this);
+
+    this.state.interval = setInterval(this.interval, 100);
+    this.handleRun = this.handleRun.bind(this);
+    this.handlePause = this.handlePause.bind(this);
+    this.handleClear = this.handleClear.bind(this);
+  }
+  handleRun() {
+    if(!this.state.isRunning) {
+      this.setState({
+        interval: setInterval(this.interval, 100),
+        isRunning: true
+      });
     }
-    function mapDataToBoard(data) {
-      return data.map(function(row, i) {
-        return <tr key={i}>
-          {mapRowDataToRow(row)}
+  }
+  handlePause() {
+    if(this.state.isRunning) {
+      this.setState({ isRunning: false });
+      clearInterval(this.state.interval);
+    }
+  }
+  handleClear() {
+    var clearBoard = [];
+    for(var i = 0; i < this.state.numberRows; i++) {
+      clearBoard[i] = [];
+      for(var j = 0; j < this.state.numberColumns; j++) {
+        clearBoard[i][j] = 0;
+      }
+    }
+
+    clearInterval(this.state.interval);
+    this.setState({
+      boardData: clearBoard,
+      isRunning: false,
+      generation: 0
+    });
+  }
+  toggleCellState(rowIndex, columnIndex) {
+    this.state.boardData[rowIndex][columnIndex] = this.state.boardData[rowIndex][columnIndex] > 0 ? 0 : 1;
+    this.setState({ boardData: this.state.boardData });
+  }
+  render() {
+    var that = this;
+
+    var getClassNameForCell = function(cell) {
+      if(cell === that.cellStates.dead) return 'dead';
+      else if(cell === that.cellStates.alive) return 'alive';
+      else if(cell === that.cellStates.old) return 'old';
+    };
+
+    var mapRowDataToRow = function (row, rowIndex) {
+      return row.map(function(cell, columnIndex) {
+        return <td onClick={() => that.toggleCellState(rowIndex, columnIndex) } className={getClassNameForCell(cell)} key={columnIndex} />
+      })
+    };
+
+    var mapDataToBoard = function (data) {
+      return data.map(function(row, rowIndex) {
+        return <tr key={rowIndex}>
+          {mapRowDataToRow(row, rowIndex)}
         </tr>
       })
-    }
+    };
+
     return (
       <div className='container main-container'>
         <h1>THE GAME OF LIFE</h1>
         <div className="control-buttons row">
-          <button className="col-md-2 col-md-offset-3">Run</button>
-          <button className="col-md-2">Pause</button>
-          <button className="col-md-2">Clear</button>
+          <button onClick={this.handleRun} className="col-md-2 col-md-offset-3">Run</button>
+          <button onClick={this.handlePause} className="col-md-2">Pause</button>
+          <button onClick={this.handleClear} className="col-md-2">Clear</button>
+        </div>
+        <div className="row">
+          <div className="col-md-2 col-md-offset-5">
+            Generations: {this.state.generation}
+          </div>
         </div>
 
         <div className="board row">
