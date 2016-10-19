@@ -75,7 +75,6 @@ class MainContainer extends React.Component {
     }.bind(this);
 
     this.interval = function() {
-
       var newBoardData = [];
       for(var i = 0; i < this.state.numberRows; i++) {
         newBoardData[i] = [];
@@ -137,11 +136,17 @@ class MainContainer extends React.Component {
     this.handleClear(rows, columns);
   }
   changeBoardSpeed(milliseconds) {
-    clearInterval(this.state.interval);
     this.setState({
-                    intervalMilliSeconds: milliseconds,
-                    interval: setInterval(this.interval, milliseconds)
-                  });
+      intervalMilliSeconds: milliseconds,
+    });
+
+    if(this.state.isRunning) {
+      clearInterval(this.state.interval);
+      this.setState({
+        interval: setInterval(this.interval, milliseconds)
+      });
+    }
+
   }
   render() {
     return (
