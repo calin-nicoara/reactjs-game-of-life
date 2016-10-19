@@ -1,195 +1,56 @@
-import React from "../../node_modules/react/react";
+var React = require('react');
 
 require('../styles/main.sass');
 
 class Main extends React.Component {
   constructor() {
     super();
-
-    this.cellStates = {
-      dead: 0,
-      alive: 1,
-      old: 2
-    };
-
-    var numberRows = 60;
-    var numberColumns = 60;
-
-    var testData = [];
-    for(var i = 0; i < numberRows; i++) {
-      testData[i] = [];
-      for(var j = 0; j < numberColumns; j++) {
-        testData[i][j] = Math.random() >= 0.50 ? this.cellStates.dead  : this.cellStates.alive;
-      }
-    }
-
-    this.state ={
-      boardData: testData,
-      numberRows: numberRows,
-      numberColumns: numberColumns,
-      isRunning: true,
-      generation: 0,
-      intervalMilliSeconds: 100
-    };
-
-    var getNewCellState = function (boardData, rowNb, colNb) {
-      var that = this;
-
-      function getNbOfAliveAndDeadNeighbours(boardData, rowNb, colNb) {
-
-        var numberOfAliveNeighbours = 0;
-        for (var i = rowNb - 1; i <= rowNb + 1; i++) {
-          for (var j = colNb - 1; j <= colNb + 1; j++) {
-            var tempRowIndex;
-            var tempColumnIndex;
-            if (i === -1) tempRowIndex = that.state.numberRows - 1;
-            else if (i === that.state.numberRows) tempRowIndex = 0;
-            else tempRowIndex = i;
-
-            if (j === -1) tempColumnIndex = that.state.numberColumns - 1;
-            else if (j === that.state.numberColumns) tempColumnIndex = 0;
-            else tempColumnIndex = j;
-
-            if (boardData[tempRowIndex][tempColumnIndex] > that.cellStates.dead && !(colNb === j && rowNb === i)) {
-              numberOfAliveNeighbours++;
-            }
-          }
-        }
-        return numberOfAliveNeighbours;
-      }
-
-      function getStateByNumberOfAliveNeighbours(stateOfCell, numberOfAliveNeighbours) {
-        if (numberOfAliveNeighbours < 2) return that.cellStates.dead;
-        else if (numberOfAliveNeighbours === 2) {
-          if (stateOfCell > that.cellStates.dead) return that.cellStates.old;
-          else return that.cellStates.dead;
-        }
-        else if (numberOfAliveNeighbours === 3) {
-          if (stateOfCell > that.cellStates.dead) return that.cellStates.old;
-          else return that.cellStates.alive;
-        }
-        else return that.cellStates.dead;
-      }
-
-      var numberOfAliveNeighbours = getNbOfAliveAndDeadNeighbours(boardData, rowNb, colNb);
-      return getStateByNumberOfAliveNeighbours(boardData[rowNb][colNb], numberOfAliveNeighbours);
-    }.bind(this);
-
-    this.interval = function() {
-
-      var newBoardData = [];
-      for(var i = 0; i < this.state.numberRows; i++) {
-        newBoardData[i] = [];
-        for(var j = 0; j < this.state.numberColumns; j++) {
-          newBoardData[i][j] = getNewCellState(this.state.boardData, i, j);
-        }
-      }
-      this.setState({ boardData: newBoardData, generation: this.state.generation+1 });
-    }.bind(this);
-
-    this.state.interval = setInterval(this.interval, this.state.intervalMilliSeconds);
-    this.handleRun = this.handleRun.bind(this);
-    this.handlePause = this.handlePause.bind(this);
-    this.handleClear = this.handleClear.bind(this);
-    this.changeBoardSpeed = this.changeBoardSpeed.bind(this);
-    this.changeBoardSize = this.changeBoardSize.bind(this);
+    this.getClassNameForCell = this.getClassNameForCell.bind(this);
+    this.mapRowDataToRow = this.mapRowDataToRow.bind(this);
+    this.mapDataToBoard = this.mapDataToBoard.bind(this);
   }
-  handleRun() {
-    if(!this.state.isRunning) {
-      this.setState({
-        interval: setInterval(this.interval, this.state.intervalMilliSeconds),
-        isRunning: true
-      });
-    }
+  getClassNameForCell(cell) {
+    if(cell === this.props.cellStates.dead) return 'dead';
+    else if(cell === this.props.cellStates.alive) return 'alive';
+    else if(cell === this.props.cellStates.old) return 'old';
   }
-  handlePause() {
-    if(this.state.isRunning) {
-      this.setState({ isRunning: false });
-      clearInterval(this.state.interval);
-    }
+  mapRowDataToRow(row, rowIndex) {
+    return row.map(function(cell, columnIndex) {
+      return <div onClick={() => this.props.toggleCellState(rowIndex, columnIndex) } className={this.getClassNameForCell(cell) + " cell"} key={columnIndex} />
+    }.bind(this))
   }
-  handleClear(rows, columns) {
-    var clearBoard = [];
-    for(var i = 0; i < rows; i++) {
-      clearBoard[i] = [];
-      for(var j = 0; j < columns; j++) {
-        clearBoard[i][j] = 0;
-      }
-    }
-
-    clearInterval(this.state.interval);
-    this.setState({
-      boardData: clearBoard,
-      isRunning: false,
-      generation: 0
-    });
-  }
-  toggleCellState(rowIndex, columnIndex) {
-    this.state.boardData[rowIndex][columnIndex] = this.state.boardData[rowIndex][columnIndex] > 0 ? 0 : 1;
-    this.setState({ boardData: this.state.boardData });
-    console.log(rowIndex + " " + columnIndex);
-  }
-  changeBoardSize(rows, columns) {
-    this.setState({
-      numberRows: rows,
-      numberColumns: columns
-    });
-    this.handleClear(rows, columns);
-  }
-  changeBoardSpeed(milliseconds) {
-    clearInterval(this.state.interval);
-    this.setState({
-      intervalMilliSeconds: milliseconds,
-      interval: setInterval(this.interval, milliseconds)
-    });
+  mapDataToBoard(data) {
+    return data.map(function(row, rowIndex) {
+      return <div className="cell-row" key={rowIndex}>
+        {this.mapRowDataToRow(row, rowIndex)}
+      </div>
+    }.bind(this))
   }
   render() {
-    var that = this;
-
-    var getClassNameForCell = function(cell) {
-      if(cell === that.cellStates.dead) return 'dead';
-      else if(cell === that.cellStates.alive) return 'alive';
-      else if(cell === that.cellStates.old) return 'old';
-    };
-
-    var mapRowDataToRow = function (row, rowIndex) {
-      return row.map(function(cell, columnIndex) {
-        return <div onClick={() => that.toggleCellState(rowIndex, columnIndex) } className={getClassNameForCell(cell) + " cell"} key={columnIndex} />
-      })
-    };
-
-    var mapDataToBoard = function (data) {
-      return data.map(function(row, rowIndex) {
-        return <div className="cell-row" key={rowIndex}>
-          {mapRowDataToRow(row, rowIndex)}
-        </div>
-      })
-    };
-
     return (
       <div className='container main-container'>
         <h1>THE GAME OF LIFE</h1>
         <div className="control-buttons row">
           <div className="col-md-2 col-md-offset-3">
-            <button className="btn btn-primary" onClick={this.handleRun} >Run</button>
+            <button className="btn btn-primary" onClick={this.props.handleRun} >Run</button>
           </div>
           <div className="col-md-2">
-            <button className="btn btn-primary" onClick={this.handlePause} >Pause</button>
+            <button className="btn btn-primary" onClick={this.props.handlePause} >Pause</button>
           </div>
           <div className="col-md-2">
-            <button className="btn btn-primary" onClick={() => this.handleClear(this.state.numberRows, this.state.numberColumns)} >Clear</button>
+            <button className="btn btn-primary" onClick={() => this.props.handleClear(this.props.numberRows, this.props.numberColumns)} >Clear</button>
           </div>
         </div>
         <div className="row">
           <div className="col-md-2 col-md-offset-5">
-            Generations: {this.state.generation}
+            Generations: {this.props.generation}
           </div>
         </div>
 
         <div className="row">
           <div className="col-md-8 col-md-offset-2">
             <div className="board">
-              {mapDataToBoard(this.state.boardData)}
+              {this.mapDataToBoard(this.props.boardData)}
             </div>
           </div>
         </div>
@@ -199,13 +60,13 @@ class Main extends React.Component {
           </div>
           <div className="row">
             <div className="col-md-2 col-md-offset-3">
-              <button onClick={() => this.changeBoardSize(40, 40)} className="btn btn-primary">40 x 40</button>
+              <button onClick={() => this.props.changeBoardSize(40, 40)} className="btn btn-primary">40 x 40</button>
             </div>
             <div className="col-md-2">
-              <button onClick={() => this.changeBoardSize(50, 50)} className="btn btn-primary">50 x 50</button>
+              <button onClick={() => this.props.changeBoardSize(50, 50)} className="btn btn-primary">50 x 50</button>
             </div>
             <div className="col-md-2">
-              <button onClick={() => this.changeBoardSize(60, 60)} className="btn btn-primary">60 x 60</button>
+              <button onClick={() => this.props.changeBoardSize(60, 60)} className="btn btn-primary">60 x 60</button>
             </div>
           </div>
           <br />
@@ -214,13 +75,13 @@ class Main extends React.Component {
           </div>
           <div className="row">
             <div className="col-md-2 col-md-offset-3">
-              <button onClick={() => this.changeBoardSpeed(600)}  className="btn btn-primary">Slow</button>
+              <button onClick={() => this.props.changeBoardSpeed(600)}  className="btn btn-primary">Slow</button>
             </div>
             <div className="col-md-2">
-              <button onClick={() => this.changeBoardSpeed(300)}  className="btn btn-primary">Normal</button>
+              <button onClick={() => this.props.changeBoardSpeed(300)}  className="btn btn-primary">Normal</button>
             </div>
             <div className="col-md-2">
-              <button onClick={() => this.changeBoardSpeed(100)}  className="btn btn-primary">Fast</button>
+              <button onClick={() => this.props.changeBoardSpeed(100)}  className="btn btn-primary">Fast</button>
             </div>
           </div>
         </div>
@@ -228,5 +89,20 @@ class Main extends React.Component {
     )
   }
 }
+
+Main.propTypes = {
+  cellStates: React.PropTypes.object.isRequired,
+  handleRun: React.PropTypes.func.isRequired,
+  handlePause: React.PropTypes.func.isRequired,
+  handleClear: React.PropTypes.func.isRequired,
+  toggleCellState: React.PropTypes.func.isRequired,
+  generation: React.PropTypes.number.isRequired,
+  boardData: React.PropTypes.array.isRequired,
+  changeBoardSize: React.PropTypes.func.isRequired,
+  changeBoardSpeed: React.PropTypes.func.isRequired,
+  numberRows: React.PropTypes.number.isRequired,
+  numberColumns: React.PropTypes.number.isRequired
+};
+
 
 module.exports = Main;
