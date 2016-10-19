@@ -1,24 +1,39 @@
+$cell-size: 10px
+
+html
+  height: 100%
+body
+  font-family: 'Source Sans Pro', sans-serif
+  background: linear-gradient(to bottom right, #ffb921, yellow)
+  height: 100%
+  font-size: 1.5em
 h1
-  font-size: 40px
+  font-size: 3em
   text-align: center
+  font-family: 'Bungee Inline', cursive
 button
-  margin-left: 20px
-table
-  margin-top: 10px
-  margin-bottom: 10px
-  border-collapse: collapse
-  border: 1px solid black
-  td
-    width: 20px
-    height: 20px
+  margin-bottom: 5px
+  width: 75%
+.board
+  margin: 20px auto
+  vertical-align: top
+  .cell-row
+    height: $cell-size
+    vertical-align: top
+  .cell
+    vertical-align: top
+    width: $cell-size
+    height: $cell-size
     text-align: center
     background-color: #ff7b2c
-    border: 1px solid black
-  td.alive
+    overflow: hidden
+    display: inline-block
+    border: 0.5px solid #6f6f6f
+  .cell.alive
     background-color: #ff0a00
-  td.dead
-    background-color: #ababab
-  td.old
+  .cell.dead
+    background-color: #FDFEFF
+  .cell.old
     background-color: #ff8175
-  th
-    border: 1px solid black
+.main-container
+  text-align: center

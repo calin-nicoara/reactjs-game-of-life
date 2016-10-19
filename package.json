@@ -5,13 +5,14 @@
   "main": "index.js",
   "scripts": {
     "production": "webpack -p",
-    "start": "webpack-dev-server"
+    "start": "webpack-dev-server --host localhost --port 8989"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "babel-core": "^6.14.0",
     "babel-loader": "^6.2.5",
+    "babel-preset-es2015": "^6.16.0",
     "babel-preset-react": "^6.11.1",
     "css-loader": "^0.25.0",
     "html-webpack-plugin": "^2.22.0",

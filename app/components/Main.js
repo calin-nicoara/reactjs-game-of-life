@@ -1,4 +1,4 @@
-var React = require('react');
+import React from "../../node_modules/react/react";
 
 require('../styles/main.sass');
 
@@ -12,8 +12,8 @@ class Main extends React.Component {
       old: 2
     };
 
-    var numberRows = 40;
-    var numberColumns = 40;
+    var numberRows = 60;
+    var numberColumns = 60;
 
     var testData = [];
     for(var i = 0; i < numberRows; i++) {
@@ -28,7 +28,8 @@ class Main extends React.Component {
       numberRows: numberRows,
       numberColumns: numberColumns,
       isRunning: true,
-      generation: 0
+      generation: 0,
+      intervalMilliSeconds: 100
     };
 
     var getNewCellState = function (boardData, rowNb, colNb) {
@@ -86,15 +87,17 @@ class Main extends React.Component {
       this.setState({ boardData: newBoardData, generation: this.state.generation+1 });
     }.bind(this);
 
-    this.state.interval = setInterval(this.interval, 100);
+    this.state.interval = setInterval(this.interval, this.state.intervalMilliSeconds);
     this.handleRun = this.handleRun.bind(this);
     this.handlePause = this.handlePause.bind(this);
     this.handleClear = this.handleClear.bind(this);
+    this.changeBoardSpeed = this.changeBoardSpeed.bind(this);
+    this.changeBoardSize = this.changeBoardSize.bind(this);
   }
   handleRun() {
     if(!this.state.isRunning) {
       this.setState({
-        interval: setInterval(this.interval, 100),
+        interval: setInterval(this.interval, this.state.intervalMilliSeconds),
         isRunning: true
       });
     }
@@ -105,11 +108,11 @@ class Main extends React.Component {
       clearInterval(this.state.interval);
     }
   }
-  handleClear() {
+  handleClear(rows, columns) {
     var clearBoard = [];
-    for(var i = 0; i < this.state.numberRows; i++) {
+    for(var i = 0; i < rows; i++) {
       clearBoard[i] = [];
-      for(var j = 0; j < this.state.numberColumns; j++) {
+      for(var j = 0; j < columns; j++) {
         clearBoard[i][j] = 0;
       }
     }
@@ -124,6 +127,21 @@ class Main extends React.Component {
   toggleCellState(rowIndex, columnIndex) {
     this.state.boardData[rowIndex][columnIndex] = this.state.boardData[rowIndex][columnIndex] > 0 ? 0 : 1;
     this.setState({ boardData: this.state.boardData });
+    console.log(rowIndex + " " + columnIndex);
+  }
+  changeBoardSize(rows, columns) {
+    this.setState({
+      numberRows: rows,
+      numberColumns: columns
+    });
+    this.handleClear(rows, columns);
+  }
+  changeBoardSpeed(milliseconds) {
+    clearInterval(this.state.interval);
+    this.setState({
+      intervalMilliSeconds: milliseconds,
+      interval: setInterval(this.interval, milliseconds)
+    });
   }
   render() {
     var that = this;
@@ -136,15 +154,15 @@ class Main extends React.Component {
 
     var mapRowDataToRow = function (row, rowIndex) {
       return row.map(function(cell, columnIndex) {
-        return <td onClick={() => that.toggleCellState(rowIndex, columnIndex) } className={getClassNameForCell(cell)} key={columnIndex} />
+        return <div onClick={() => that.toggleCellState(rowIndex, columnIndex) } className={getClassNameForCell(cell) + " cell"} key={columnIndex} />
       })
     };
 
     var mapDataToBoard = function (data) {
       return data.map(function(row, rowIndex) {
-        return <tr key={rowIndex}>
+        return <div className="cell-row" key={rowIndex}>
           {mapRowDataToRow(row, rowIndex)}
-        </tr>
+        </div>
       })
     };
 
@@ -152,9 +170,15 @@ class Main extends React.Component {
       <div className='container main-container'>
         <h1>THE GAME OF LIFE</h1>
         <div className="control-buttons row">
-          <button onClick={this.handleRun} className="col-md-2 col-md-offset-3">Run</button>
-          <button onClick={this.handlePause} className="col-md-2">Pause</button>
-          <button onClick={this.handleClear} className="col-md-2">Clear</button>
+          <div className="col-md-2 col-md-offset-3">
+            <button className="btn btn-primary" onClick={this.handleRun} >Run</button>
+          </div>
+          <div className="col-md-2">
+            <button className="btn btn-primary" onClick={this.handlePause} >Pause</button>
+          </div>
+          <div className="col-md-2">
+            <button className="btn btn-primary" onClick={() => this.handleClear(this.state.numberRows, this.state.numberColumns)} >Clear</button>
+          </div>
         </div>
         <div className="row">
           <div className="col-md-2 col-md-offset-5">
@@ -162,26 +186,42 @@ class Main extends React.Component {
           </div>
         </div>
 
-        <div className="board row">
-          <table className="col-md-8 col-md-offset-2">
-            <tbody>
-            {mapDataToBoard(this.state.boardData)}
-            </tbody>
-          </table>
+        <div className="row">
+          <div className="col-md-8 col-md-offset-2">
+            <div className="board">
+              {mapDataToBoard(this.state.boardData)}
+            </div>
+          </div>
         </div>
         <div className="game-settings">
           <div className="row">
-            <div className="col-md-2 col-md-offset-2">Board Size: </div>
-            <button className="col-md-2">Size 1</button>
-            <button className="col-md-2">Size 2</button>
-            <button className="col-md-2">Size 3</button>
+            Board Size
+          </div>
+          <div className="row">
+            <div className="col-md-2 col-md-offset-3">
+              <button onClick={() => this.changeBoardSize(40, 40)} className="btn btn-primary">40 x 40</button>
+            </div>
+            <div className="col-md-2">
+              <button onClick={() => this.changeBoardSize(50, 50)} className="btn btn-primary">50 x 50</button>
+            </div>
+            <div className="col-md-2">
+              <button onClick={() => this.changeBoardSize(60, 60)} className="btn btn-primary">60 x 60</button>
+            </div>
           </div>
           <br />
           <div className="row">
-            <div className="col-md-2 col-md-offset-2">Sim Speed: </div>
-            <button className="col-md-2">Size 1</button>
-            <button className="col-md-2">Size 2</button>
-            <button className="col-md-2">Size 3</button>
+            Speed
+          </div>
+          <div className="row">
+            <div className="col-md-2 col-md-offset-3">
+              <button onClick={() => this.changeBoardSpeed(600)}  className="btn btn-primary">Slow</button>
+            </div>
+            <div className="col-md-2">
+              <button onClick={() => this.changeBoardSpeed(300)}  className="btn btn-primary">Normal</button>
+            </div>
+            <div className="col-md-2">
+              <button onClick={() => this.changeBoardSpeed(100)}  className="btn btn-primary">Fast</button>
+            </div>
           </div>
         </div>
       </div>
